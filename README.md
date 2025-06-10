@@ -14,7 +14,7 @@ pip install stylish-onnx
 from stylish_onnx import Stylish
 import soundfile as sf
 
-stylish = Stylish('stylish.onnx')    
+stylish = Stylish('model.onnx')    
 text = 'Hello world! How are you?'
 audio_path = 'audio.wav'
     
