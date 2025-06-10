@@ -2,4 +2,12 @@
 
 TTS with Stylish (StyleTTS2) and onnxruntime
 
-See [main.py](main.py)
+## Install
+
+```console
+pip install stylish-onnx
+```
+
+## Examples
+
+See [examples](examples)
