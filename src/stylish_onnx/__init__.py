@@ -1,35 +1,31 @@
-"""
-wget https://huggingface.co/thewh1teagle/stylish-tts/resolve/main/model.onnx
-"""
-
 import onnxruntime as ort
 from phonemizer.backend.espeak.wrapper import EspeakWrapper
 from phonemizer import phonemize
 import espeakng_loader
-import soundfile as sf
 import numpy as np
+import json
 
 EspeakWrapper.set_library(espeakng_loader.get_library_path())
 EspeakWrapper.set_data_path(espeakng_loader.get_data_path())
 
 class Tokenizer:
-    def __init__(self):
-        self._pad = "$"
-        self._punctuation = ';:,.!?¡¿—…\"()“” '
-        self._letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-        self._letters_ipa = "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁᵊǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
+    def __init__(self, symbol_map: dict):        
+        self.char_to_idx = self._build_tokenizer(symbol_map)
         
-        self.char_to_idx = self._build_lexicon()
+    def _build_tokenizer(self, symbol_map: dict):
+        pad = symbol_map['pad']
+        punctuation = symbol_map['punctuation']
+        letters = symbol_map['letters']
+        letters_ipa = symbol_map['letters_ipa']
         
-    def _build_lexicon(self):
-        """Create character to index mapping from all symbols"""
         all_symbols = (
-            [self._pad] + 
-            list(self._punctuation) + 
-            list(self._letters) + 
-            list(self._letters_ipa)
+            [pad] + 
+            list(punctuation) + 
+            list(letters) + 
+            list(letters_ipa)
         )
         return {char: idx for idx, char in enumerate(all_symbols)}
+   
 
     def tokenize(self, text):
         indices = []
@@ -44,8 +40,15 @@ class Tokenizer:
 class Stylish:
     def __init__(self, model_path):
         self.sess = ort.InferenceSession(model_path)
-        self.tokenizer = Tokenizer()
-        self.sample_rate = 24000
+        
+        # Load config
+        model_meta = self.sess.get_modelmeta()
+        model_config_str = model_meta.custom_metadata_map['model_config']
+        self.config = json.loads(model_config_str)
+        self.sample_rate = self.config['sample_rate']
+        symbol_map = self.config['symbol']
+        
+        self.tokenizer = Tokenizer(symbol_map)
         
     def _phonemize(self, text: str) -> str:
         return phonemize(text)
@@ -56,11 +59,13 @@ class Stylish:
             phonemes = self._phonemize(text)
         
         tokens = self.tokenizer.tokenize(phonemes)
+        
         tokens_array = np.array(tokens, dtype=np.int64)
         
+        # Create padded texts array
         texts = np.zeros([1, len(tokens) + 2], dtype=np.int64)
         texts[0, 1:len(tokens) + 1] = tokens_array
-
+        
         text_lengths = np.array([len(tokens) + 2], dtype=np.int64)
         
         inputs = {
@@ -69,20 +74,7 @@ class Stylish:
         }
         
         outputs = self.sess.run(None, inputs)
-        
         raw_audio = outputs[0]
-        # normalize samples
         samples = np.multiply(raw_audio, 32768).astype(np.int16)
         
-        if samples.ndim > 1:
-            samples = samples.flatten()
-        
         return samples, self.sample_rate
-    
-if __name__ == '__main__':
-    stylish = Stylish('model.onnx')
-    samples, sample_rate = stylish.create('Hello world! How are you?')
-    audio_path = 'audio.wav'
-    
-    sf.write(audio_path, samples, sample_rate)
-    print(f'Created {audio_path}')

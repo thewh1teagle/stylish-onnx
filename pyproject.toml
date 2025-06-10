@@ -1,8 +1,11 @@
 [project]
 name = "stylish-onnx"
 version = "0.1.0"
-description = "Add your description here"
+description = "TTS with Stylish (StyleTTS2) and onnxruntime"
 readme = "README.md"
+authors = [
+    { name = "thewh1teagle", email = "61390950+thewh1teagle@users.noreply.github.com" }
+]
 requires-python = ">=3.11"
 dependencies = [
     "espeakng-loader>=0.2.4",
@@ -11,3 +14,7 @@ dependencies = [
     "phonemizer-fork>=3.3.2",
     "soundfile>=0.13.1",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

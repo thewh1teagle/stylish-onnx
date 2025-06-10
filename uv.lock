@@ -666,7 +666,7 @@ wheels = [
 [[package]]
 name = "stylish-onnx"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "espeakng-loader" },
     { name = "numpy" },
