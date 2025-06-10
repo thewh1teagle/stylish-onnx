@@ -1,0 +1,13 @@
+[project]
+name = "stylish-onnx"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "espeakng-loader>=0.2.4",
+    "numpy>=2.3.0",
+    "onnxruntime>=1.22.0",
+    "phonemizer-fork>=3.3.2",
+    "soundfile>=0.13.1",
+]
